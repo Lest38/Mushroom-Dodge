@@ -43,7 +43,6 @@ public class SpawnManager : MonoBehaviour
         {
             SpawnFireball();
 
-            // Используем множитель скорости спавна из DifficultyManager
             if (DifficultyManager.Instance != null)
             {
                 currentSpawnRate = Mathf.Max(
@@ -61,11 +60,7 @@ public class SpawnManager : MonoBehaviour
         float spawnX = Random.Range(-spawnXRange, spawnXRange);
         Vector3 spawnPos = new Vector3(spawnX, 7f, 0f);
 
-        // Создаем файербол
         GameObject fireball = Instantiate(fireballPrefab, spawnPos, Quaternion.identity, spawnParent);
-
-        // У файербола уже есть скрипт Fireball.cs который сам установит скорость
-        // Ничего дополнительного делать не нужно!
     }
 
     IEnumerator SpecialWaveRoutine()

@@ -15,7 +15,7 @@ public class Fireball : MonoBehaviour
     [Header("Color Settings")]
     public bool changeColorBySpeed = true;
     public Color slowColor = Color.yellow;
-    public Color mediumColor = new Color(1f, 0.5f, 0f); // Orange
+    public Color mediumColor = new Color(1f, 0.5f, 0f);
     public Color fastColor = Color.red;
 
     [Header("Size Settings")]
@@ -27,7 +27,6 @@ public class Fireball : MonoBehaviour
     public float mediumThreshold = 10f;
     public float fastThreshold = 14f;
 
-    // Приватные поля
     private float currentSpeed;
     private bool hasCollided = false;
     private SpriteRenderer spriteRenderer;
@@ -36,7 +35,6 @@ public class Fireball : MonoBehaviour
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        // Получаем множитель скорости
         float speedMultiplier = 1f;
 
         if (useProgressiveSpeed && DifficultyManager.Instance != null)
@@ -48,16 +46,13 @@ public class Fireball : MonoBehaviour
             speedMultiplier = DifficultyManager.Instance.GetSpeedMultiplier();
         }
 
-        // Устанавливаем скорость
         float baseSpeed = Random.Range(minSpeed, maxSpeed);
         currentSpeed = baseSpeed * speedMultiplier;
 
         Debug.Log($"Fireball создан: база={baseSpeed:F1}, множитель=x{speedMultiplier:F2}, итог={currentSpeed:F1}");
 
-        // Настраиваем визуал
         UpdateVisuals();
 
-        // Случайный размер
         float randomScale = Random.Range(0.9f, 1.1f);
         transform.localScale = Vector3.one * randomScale;
     }
@@ -66,11 +61,9 @@ public class Fireball : MonoBehaviour
     {
         if (hasCollided) return;
 
-        // Движение
         transform.Translate(Vector3.down * currentSpeed * Time.deltaTime, Space.World);
         transform.Rotate(0, 0, rotationSpeed * Time.deltaTime);
 
-        // Уничтожение если упал
         if (transform.position.y < -7f)
         {
             Destroy(gameObject);
@@ -81,7 +74,6 @@ public class Fireball : MonoBehaviour
     {
         if (spriteRenderer == null) return;
 
-        // Цвет
         if (changeColorBySpeed)
         {
             if (currentSpeed < slowThreshold)
@@ -92,7 +84,6 @@ public class Fireball : MonoBehaviour
                 spriteRenderer.color = fastColor;
         }
 
-        // Размер
         if (changeSizeBySpeed && currentSpeed > mediumThreshold)
         {
             float t = Mathf.Clamp01((currentSpeed - mediumThreshold) / (fastThreshold - mediumThreshold));

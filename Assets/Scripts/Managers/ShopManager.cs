@@ -345,13 +345,10 @@ public class ShopManager : MonoBehaviour
     {
         Debug.Log("ShopManager реинициализация");
 
-        // Перезагружаем данные
         LoadShopData();
 
-        // Обновляем UI
         UpdateSporesDisplay();
 
-        // Скрываем магазин
         if (shopPanel != null)
         {
             shopPanel.SetActive(false);

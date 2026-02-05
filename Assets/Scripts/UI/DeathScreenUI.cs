@@ -23,7 +23,6 @@ public class DeathScreenUI : MonoBehaviour
 
     void SetupButtons()
     {
-        // Если кнопки не назначены в Inspector - находим автоматически
         if (restartButton == null || menuButton == null)
         {
             Button[] allButtons = GetComponentsInChildren<Button>();
@@ -36,7 +35,6 @@ public class DeathScreenUI : MonoBehaviour
             }
         }
 
-        // Настраиваем кнопку Restart
         if (restartButton != null)
         {
             restartButton.onClick.RemoveAllListeners();
@@ -51,7 +49,6 @@ public class DeathScreenUI : MonoBehaviour
             Debug.LogWarning("Кнопка Restart не найдена!");
         }
 
-        // Настраиваем кнопку Menu
         if (menuButton != null)
         {
             menuButton.onClick.RemoveAllListeners();
@@ -69,10 +66,8 @@ public class DeathScreenUI : MonoBehaviour
 
     void ReturnToMainMenu()
     {
-        // Скрываем DeathScreen
         gameObject.SetActive(false);
 
-        // Пытаемся найти и показать MainMenu
         GameObject mainMenuObj = GameObject.Find("MainMenu");
         if (mainMenuObj != null)
         {
@@ -83,7 +78,6 @@ public class DeathScreenUI : MonoBehaviour
         {
             Debug.LogWarning("MainMenu не найден по имени!");
 
-            // Альтернативный поиск
             Canvas canvas = FindObjectOfType<Canvas>();
             if (canvas != null)
             {
@@ -98,27 +92,17 @@ public class DeathScreenUI : MonoBehaviour
                 }
             }
         }
-
-        // Если GameManager доступен, можем вызвать его метод
-        if (GameManager.Instance != null)
-        {
-            // Можем сбросить счет если нужно
-            // GameManager.Instance.ResetScore(); // если есть такой метод
-        }
     }
 
-    // Метод с 4 параметрами
     public void ShowResults(float time, int score, int highScore, int earnedSpores)
     {
         ShowResults(time, score, highScore, earnedSpores, score > highScore);
     }
 
-    // Метод с 5 параметрами
     public void ShowResults(float time, int score, int highScore, int earnedSpores, bool isNewRecord)
     {
         Debug.Log($"DeathScreenUI.ShowResults вызван");
 
-        // Обновляем тексты
         if (timeText != null)
         {
             timeText.text = $"Time: {time:F1}s";
@@ -139,13 +123,11 @@ public class DeathScreenUI : MonoBehaviour
             sporesEarnedText.text = $"+{earnedSpores} spores";
         }
 
-        // Показываем "Новый рекорд!" если нужно
         if (newRecordText != null)
         {
             newRecordText.SetActive(isNewRecord);
         }
 
-        // Активируем панель
         gameObject.SetActive(true);
     }
 }

@@ -7,7 +7,6 @@ public class SceneInitializer : MonoBehaviour
     {
         Debug.Log($"SceneInitializer: сцена {SceneManager.GetActiveScene().name} загружена");
 
-        // Ждем один кадр чтобы все Awake() выполнились
         Invoke(nameof(InitializeManagers), 0.1f);
     }
 
@@ -15,7 +14,6 @@ public class SceneInitializer : MonoBehaviour
     {
         Debug.Log("Инициализация менеджеров...");
 
-        // Реинициализируем все менеджеры
         if (PowerUpManager.Instance != null)
         {
             PowerUpManager.Instance.Reinitialize();
@@ -28,7 +26,6 @@ public class SceneInitializer : MonoBehaviour
 
         if (SpawnManager.Instance != null)
         {
-            // Останавливаем спавн на всякий случай
             SpawnManager.Instance.StopSpawning();
         }
 

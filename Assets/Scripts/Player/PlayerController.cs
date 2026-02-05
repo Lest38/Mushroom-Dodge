@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
@@ -15,6 +16,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GameObject shieldVisual;
     private bool hasShield = false;
 
+    [Header("Death Effect")]
+    [SerializeField] private float fadeOutDuration = 0.5f;
+
     private float currentSpeed = 0f;
     private bool isDead = false;
     private SpriteRenderer spriteRenderer;
@@ -23,7 +27,6 @@ public class PlayerController : MonoBehaviour
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        // Автоматически находим Animator если не назначен
         if (animator == null)
         {
             animator = GetComponent<Animator>();
@@ -37,6 +40,11 @@ public class PlayerController : MonoBehaviour
         {
             shieldVisual.SetActive(false);
         }
+
+        if (animator != null)
+        {
+            animator.SetBool("IsRunning", false);
+        }
     }
 
     void Update()
@@ -45,7 +53,6 @@ public class PlayerController : MonoBehaviour
 
         if (GameManager.Instance == null || !GameManager.Instance.IsGameRunning)
         {
-            // Вне игры - анимация покоя
             if (animator != null)
             {
                 animator.SetBool("IsRunning", false);
@@ -62,41 +69,32 @@ public class PlayerController : MonoBehaviour
 
         if (Mathf.Abs(input) > 0.1f)
         {
-            // Движение
             currentSpeed = Mathf.MoveTowards(currentSpeed, input * moveSpeed, acceleration * Time.deltaTime);
 
-            // Анимация бега
             if (animator != null)
             {
                 animator.SetBool("IsRunning", true);
             }
 
-            // Поворот в сторону движения
             if (input > 0)
             {
                 transform.localScale = new Vector3(1, 1, 1);
-                // Для спрайтов можно также использовать:
-                // spriteRenderer.flipX = false;
             }
             else if (input < 0)
             {
                 transform.localScale = new Vector3(-1, 1, 1);
-                // spriteRenderer.flipX = true;
             }
         }
         else
         {
-            // Остановка
             currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.deltaTime);
 
-            // Анимация покоя
             if (animator != null)
             {
                 animator.SetBool("IsRunning", false);
             }
         }
 
-        // Применяем движение
         Vector3 newPos = transform.position + Vector3.right * currentSpeed * Time.deltaTime;
         newPos.x = Mathf.Clamp(newPos.x, -maxX, maxX);
         transform.position = newPos;
@@ -106,16 +104,57 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag("Fireball") && !isDead)
         {
-            // Проверяем есть ли щит
             if (hasShield)
             {
-                // Используем щит
                 UseShield();
                 Destroy(other.gameObject);
                 return;
             }
 
             Die();
+        }
+    }
+
+    private IEnumerator FadeOutAndDisable()
+    {
+        if (spriteRenderer == null) yield break;
+
+        Color originalColor = spriteRenderer.color;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < fadeOutDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsedTime / fadeOutDuration);
+            spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+            yield return null;
+        }
+
+        gameObject.SetActive(false);
+    }
+
+    void Die()
+    {
+        if (isDead) return;
+
+        isDead = true;
+
+        currentSpeed = 0f;
+
+        if (animator != null)
+        {
+            animator.SetBool("IsRunning", false);
+            animator.SetTrigger("Die");
+        }
+
+        Collider2D collider = GetComponent<Collider2D>();
+        if (collider != null) collider.enabled = false;
+
+        StartCoroutine(FadeOutAndDisable());
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.PlayerDied();
         }
     }
 
@@ -130,7 +169,6 @@ public class PlayerController : MonoBehaviour
 
         Debug.Log("Щит активирован!");
 
-        // Автоматически отключаем щит через duration секунд
         Invoke("DisableShield", duration);
     }
 
@@ -158,48 +196,48 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Щит закончился");
     }
 
-    void Die()
-    {
-        isDead = true;
-
-        // Анимация смерти
-        if (animator != null)
-        {
-            animator.SetTrigger("Die");
-        }
-        else
-        {
-            // Визуальный эффект если нет аниматора
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.color = Color.red;
-            }
-        }
-
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.PlayerDied();
-        }
-    }
-
     public void ResetPlayer()
     {
         isDead = false;
 
-        // Сброс анимации
-        if (animator != null)
+        if (!gameObject.activeSelf)
         {
-            animator.SetTrigger("Reset");
-            animator.SetBool("IsRunning", false);
+            gameObject.SetActive(true);
         }
 
-        // Сброс визуала
+        if (animator != null)
+        {
+            animator.Rebind();
+
+            animator.SetBool("IsRunning", false);
+
+            animator.Play("Idle", 0, 0f);
+        }
+
         if (spriteRenderer != null)
         {
             spriteRenderer.color = Color.white;
         }
 
+        Collider2D collider = GetComponent<Collider2D>();
+        if (collider != null)
+        {
+            collider.enabled = true;
+        }
+
         transform.position = new Vector3(0, -3.5f, 0);
         transform.localScale = new Vector3(1, 1, 1);
+
+        currentSpeed = 0f;
+
+        CancelInvoke("DisableShield");
+
+        hasShield = false;
+        if (shieldVisual != null)
+        {
+            shieldVisual.SetActive(false);
+        }
+
+        Debug.Log("Игрок сброшен!");
     }
 }

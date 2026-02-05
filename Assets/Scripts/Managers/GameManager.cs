@@ -36,7 +36,7 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
-            return; // Важно: выходим если объект уничтожен
+            return;
         }
 
         LoadProgress();
@@ -84,30 +84,25 @@ public class GameManager : MonoBehaviour
 
             gameTime += Time.deltaTime;
             score = Mathf.FloorToInt(gameTime * 10);
-           
-            // Логируем первые несколько секунд для отладки спавна
+
             if (gameTime < 5f && Mathf.Floor(gameTime) != Mathf.Floor(oldTime))
             {
 
-                // Проверяем активен ли спавн
                 if (SpawnManager.Instance != null)
                 {
                     Debug.Log("SpawnManager Instance существует");
                 }
 
-                // Проверяем есть ли файерболы на сцене
                 GameObject[] fireballs = GameObject.FindGameObjectsWithTag("Fireball");
                 Debug.Log($"Файерболов на сцене: {fireballs.Length}");
             }
 
-            // Обновляем UI каждые 0.5 секунды
             if (gameTime - lastUIUpdateTime > 0.5f)
             {
                 UpdateUI();
                 lastUIUpdateTime = gameTime;
             }
 
-            // Обновляем сложность
             if (DifficultyManager.Instance != null)
             {
                 DifficultyManager.Instance.UpdateDifficulty(gameTime);
@@ -123,25 +118,26 @@ public class GameManager : MonoBehaviour
         gameTime = 0f;
         score = 0;
 
-        // Скрываем UI
         if (mainMenu != null) mainMenu.SetActive(false);
         if (deathScreen != null && deathScreen.activeSelf) deathScreen.SetActive(false);
 
-        // Показываем игровой UI
         if (inGameUI != null) inGameUI.SetActive(true);
 
-        // Сбрасываем игрока
         if (player != null)
         {
+            player.gameObject.SetActive(true);
             player.ResetPlayer();
         }
         else
         {
             FindPlayer();
-            if (player != null) player.ResetPlayer();
+            if (player != null)
+            {
+                player.gameObject.SetActive(true);
+                player.ResetPlayer();
+            }
         }
 
-        // ВАЖНО: Запускаем спавн файерболов ПЕРЕД обновлением UI
         Debug.Log("Запуск спавна файерболов...");
 
         if (SpawnManager.Instance != null)
@@ -153,7 +149,6 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError("SpawnManager Instance не найден!");
 
-            // Пытаемся найти вручную
             SpawnManager spawnManager = FindObjectOfType<SpawnManager>();
             if (spawnManager != null)
             {
@@ -166,10 +161,8 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Обновляем UI
         UpdateUI();
 
-        // Обновляем кнопку бонуса
         if (PowerUpManager.Instance != null)
         {
             PowerUpManager.Instance.OnGameStateChanged(true);
@@ -186,7 +179,6 @@ public class GameManager : MonoBehaviour
 
         isGameRunning = false;
 
-        // Останавливаем спавн
         if (SpawnManager.Instance != null)
         {
             SpawnManager.Instance.StopSpawning();
@@ -197,19 +189,16 @@ public class GameManager : MonoBehaviour
             PowerUpManager.Instance.OnGameStateChanged(false);
         }
 
-        // Удаляем все файерболлы
         GameObject[] fireballs = GameObject.FindGameObjectsWithTag("Fireball");
         foreach (GameObject fb in fireballs)
         {
             if (fb != null) Destroy(fb);
         }
 
-        // Начисляем споры (минимум 1)
         int earnedSpores = Mathf.Max(1, score / 10);
         spores += earnedSpores;
         Debug.Log($"Начислено спор: {earnedSpores}, всего: {spores}");
 
-        // Проверяем рекорд
         bool isNewRecord = false;
         if (score > highScore)
         {
@@ -223,16 +212,13 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Сохраняем прогресс
         SaveProgress();
 
-        // Показываем DeathScreen
         if (deathScreen != null)
         {
             deathScreen.SetActive(true);
             Debug.Log("DeathScreen показан");
 
-            // Обновляем UI DeathScreen
             DeathScreenUI deathUI = deathScreen.GetComponent<DeathScreenUI>();
             if (deathUI != null)
             {
@@ -246,7 +232,6 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"Игра окончена. Время: {gameTime:F1}s, Очки: {score}, Рекорд: {highScore}");
 
-        // Звук меню (если есть)
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayMenuMusic();
@@ -257,7 +242,6 @@ public class GameManager : MonoBehaviour
             inGameUI.SetActive(false);
         }
 
-        // Обновляем кнопку бонуса
         if (PowerUpManager.Instance != null)
         {
             PowerUpManager.Instance.OnGameStateChanged(false);
@@ -271,10 +255,8 @@ public class GameManager : MonoBehaviour
 
     void UpdateUI()
     {
-        // ОТЛАДКА
         Debug.Log($"UpdateUI: Time={gameTime:F1}, Score={score}, isGameRunning={isGameRunning}");
 
-        // Проверяем и включаем ScoreText
         if (scoreText == null)
         {
             Debug.LogError("scoreText ссылка NULL!");
@@ -291,7 +273,6 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning("ScoreText не активен в иерархии! Проверьте родительские объекты.");
 
-            // Включаем весь путь к объекту
             Transform parent = scoreText.transform.parent;
             while (parent != null)
             {
@@ -304,7 +285,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Проверяем и включаем TimeText
         if (timeText == null)
         {
             Debug.LogError("timeText ссылка NULL!");
@@ -341,7 +321,6 @@ public class GameManager : MonoBehaviour
             shieldCountText.gameObject.SetActive(shieldCount > 0);
         }
 
-        // Обновляем текст
         scoreText.text = $"Score: {score}";
         timeText.text = $"Time: {gameTime:F1}s";
 
@@ -396,7 +375,6 @@ public class GameManager : MonoBehaviour
 
     public bool IsGameRunning => isGameRunning;
 
-    // Метод для отладки
     public void DebugInfo()
     {
         Debug.Log($"=== DEBUG INFO ===");

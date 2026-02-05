@@ -74,17 +74,13 @@ public class PowerUpManager : MonoBehaviour
     {
         Debug.Log("PowerUpManager реинициализация");
 
-        // Находим игрока заново
         playerController = FindObjectOfType<PlayerController>();
 
-        // Перезагружаем бонусы
         LoadEquippedPowerUp();
 
-        // Сбрасываем состояние
         isPowerUpActive = false;
         powerUpTimer = 0f;
 
-        // Обновляем UI
         UpdateUI();
     }
 
@@ -281,7 +277,6 @@ public class PowerUpManager : MonoBehaviour
         }
     }
 
-    // Вызывается из GameManager при изменении состояния
     public void OnGameStateChanged(bool isGameRunning)
     {
         Debug.Log($"PowerUpManager: состояние игры изменилось на {isGameRunning}");
@@ -292,20 +287,6 @@ public class PowerUpManager : MonoBehaviour
     {
         Debug.Log("Обновление бонуса из магазина");
         LoadEquippedPowerUp();
-    }
-
-    [ContextMenu("Тест активации щита")]
-    public void TestActivateShield()
-    {
-        Debug.Log("=== ТЕСТОВАЯ АКТИВАЦИЯ ЩИТА ===");
-        UsePowerUp();
-    }
-
-    [ContextMenu("Тест сброса щита")]
-    public void TestResetShield()
-    {
-        Debug.Log("=== ТЕСТОВЫЙ СБРОС ЩИТА ===");
-        EndPowerUp();
     }
 
     public bool IsShieldActive()

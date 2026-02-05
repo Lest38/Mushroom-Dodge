@@ -351,6 +351,7 @@ MonoBehaviour:
   itemIcon: {fileID: 0}
   itemNameText: {fileID: 0}
   itemCostText: {fileID: 0}
+  itemQuantityText: {fileID: 0}
   purchasedBadge: {fileID: 0}
   equippedBadge: {fileID: 0}
   background: {fileID: 0}
@@ -391,8 +392,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.000045776, y: 52}
-  m_SizeDelta: {x: 174.2294, y: 168.2107}
+  m_AnchoredPosition: {x: 0.00005722, y: 55.295}
+  m_SizeDelta: {x: 222.0718, y: 206.49}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5634221593703748124
 CanvasRenderer:
@@ -422,7 +423,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 9b9c16e1c2faf4344b1bb52d68ce7843, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 7ae47335dee14ae44b1b81a1a4db81ac, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

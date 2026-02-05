@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6267625672034648527}
   - component: {fileID: 1889834959581411519}
   - component: {fileID: 549734350149862840}
+  - component: {fileID: -5820127339781965696}
   m_Layer: 0
   m_Name: Fireball
   m_TagString: Fireball
@@ -119,9 +120,9 @@ CircleCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: -1}
   serializedVersion: 2
-  m_Radius: 0.5
+  m_Radius: 0.9
 --- !u!50 &1889834959581411519
 Rigidbody2D:
   serializedVersion: 4
@@ -166,3 +167,25 @@ MonoBehaviour:
   rotationSpeed: 100
   trailParticles: {fileID: 0}
   explosionParticles: {fileID: 0}
+  useProgressiveSpeed: 1
+  changeColorBySpeed: 1
+  slowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  mediumColor: {r: 1, g: 0.5, b: 0, a: 1}
+  fastColor: {r: 1, g: 0, b: 0, a: 1}
+  changeSizeBySpeed: 1
+  minSizeMultiplier: 0.7
+  slowThreshold: 6
+  mediumThreshold: 10
+  fastThreshold: 14
+--- !u!210 &-5820127339781965696
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6431831903646040440}
+  m_Enabled: 1
+  m_SortingLayerID: -1139658221
+  m_SortingLayer: 3
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
