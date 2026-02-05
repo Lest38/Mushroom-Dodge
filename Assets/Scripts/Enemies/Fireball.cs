@@ -3,8 +3,8 @@ using UnityEngine;
 public class Fireball : MonoBehaviour
 {
     [Header("Basic Settings")]
-    public float minSpeed = 3f;
-    public float maxSpeed = 8f;
+    public float minSpeed = 4f;
+    public float maxSpeed = 9f;
     public float rotationSpeed = 100f;
     public ParticleSystem trailParticles;
     public ParticleSystem explosionParticles;

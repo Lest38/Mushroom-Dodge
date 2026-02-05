@@ -22,9 +22,17 @@ public class PlayerController : MonoBehaviour
     private float currentSpeed = 0f;
     private bool isDead = false;
     private SpriteRenderer spriteRenderer;
+    private bool isInitialized = false;
 
     void Start()
     {
+        InitializePlayer();
+    }
+
+    void InitializePlayer()
+    {
+        if (isInitialized) return;
+
         spriteRenderer = GetComponent<SpriteRenderer>();
 
         if (animator == null)
@@ -36,14 +44,31 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        if (animator != null)
+        {
+            animator.Rebind();
+            animator.Update(0f);
+
+            animator.SetBool("IsRunning", false);
+            animator.ResetTrigger("Die");
+
+            animator.Play("Idle", 0, 0f);
+        }
+
         if (shieldVisual != null)
         {
             shieldVisual.SetActive(false);
         }
 
-        if (animator != null)
+        isInitialized = true;
+        Debug.Log("Player инициализирован");
+    }
+
+    void OnEnable()
+    {
+        if (isInitialized)
         {
-            animator.SetBool("IsRunning", false);
+            ResetAnimationState();
         }
     }
 
@@ -144,6 +169,7 @@ public class PlayerController : MonoBehaviour
         if (animator != null)
         {
             animator.SetBool("IsRunning", false);
+            animator.SetTrigger("Die");
         }
 
         Collider2D collider = GetComponent<Collider2D>();
@@ -195,6 +221,21 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Щит закончился");
     }
 
+    private void ResetAnimationState()
+    {
+        if (animator == null) return;
+
+        animator.Rebind();
+        animator.Update(0f);
+
+        animator.SetBool("IsRunning", false);
+        animator.ResetTrigger("Die");
+
+        animator.Play("Idle", 0, 0f);
+
+        Debug.Log("Анимация сброшена");
+    }
+
     public void ResetPlayer()
     {
         isDead = false;
@@ -204,14 +245,12 @@ public class PlayerController : MonoBehaviour
             gameObject.SetActive(true);
         }
 
-        if (animator != null)
+        if (!isInitialized)
         {
-            animator.Rebind();
-
-            animator.SetBool("IsRunning", false);
-
-            animator.Play("Idle", 0, 0f);
+            InitializePlayer();
         }
+
+        ResetAnimationState();
 
         if (spriteRenderer != null)
         {
@@ -237,6 +276,6 @@ public class PlayerController : MonoBehaviour
             shieldVisual.SetActive(false);
         }
 
-        Debug.Log("Игрок сброшен!");
+        Debug.Log("Игрок полностью сброшен!");
     }
 }

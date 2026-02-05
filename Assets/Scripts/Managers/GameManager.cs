@@ -140,6 +140,8 @@ public class GameManager : MonoBehaviour
             if (player != null) player.ResetPlayer();
         }
 
+        StartCoroutine(ResetPlayerWithDelay());
+
         Debug.Log("Запуск спавна файерболов...");
 
         if (SpawnManager.Instance != null)
@@ -171,6 +173,26 @@ public class GameManager : MonoBehaviour
         }
 
         Debug.Log("Игра запущена! Ожидайте файерболы через 1.5 секунды...");
+    }
+
+
+    private IEnumerator ResetPlayerWithDelay()
+    {
+        yield return new WaitForEndOfFrame();
+
+        if (player != null)
+        {
+            player.ResetPlayer();
+        }
+        else
+        {
+            FindPlayer();
+            if (player != null)
+            {
+                yield return new WaitForEndOfFrame();
+                player.ResetPlayer();
+            }
+        }
     }
 
     public void PlayerDied()

@@ -10,12 +10,12 @@ public class DifficultyManager : MonoBehaviour
     [SerializeField] private AnimationCurve countCurve;
 
     [Header("Speed Settings")]
-    [SerializeField] private float minSpeedMultiplier = 1f;
-    [SerializeField] private float maxSpeedMultiplier = 2.5f;
-    [SerializeField] private float timeToMaxSpeed = 300f;
+    [SerializeField] private float minSpeedMultiplier = 1.2f;
+    [SerializeField] private float maxSpeedMultiplier = 3f;
+    [SerializeField] private float timeToMaxSpeed = 200f;
 
     [Header("Settings")]
-    [SerializeField] private float maxTime = 300f;
+    [SerializeField] private float maxTime = 260f;
 
     private float currentTime = 0f;
 
@@ -30,9 +30,18 @@ public class DifficultyManager : MonoBehaviour
         currentTime = Mathf.Min(gameTime, maxTime);
     }
 
+
     public float GetSpeedMultiplier()
     {
-        return speedCurve.Evaluate(currentTime / maxTime);
+        float t = currentTime / maxTime;
+        float curveValue = speedCurve.Evaluate(t);
+
+        if (t > 0.7f)
+        {
+            curveValue *= Mathf.Lerp(1f, 1.3f, (t - 0.7f) / 0.3f);
+        }
+
+        return curveValue;
     }
 
     public float GetProgressiveSpeedMultiplier()
@@ -41,8 +50,8 @@ public class DifficultyManager : MonoBehaviour
 
         float progress = Mathf.Clamp01(currentTime / timeToMaxSpeed);
 
-        float smoothProgress = Mathf.SmoothStep(0f, 1f, progress);
-        return Mathf.Lerp(minSpeedMultiplier, maxSpeedMultiplier, smoothProgress);
+        float aggressiveProgress = Mathf.Pow(progress, 0.7f);
+        return Mathf.Lerp(minSpeedMultiplier, maxSpeedMultiplier, aggressiveProgress);
     }
 
     public float GetSpawnRateMultiplier()
