@@ -144,7 +144,6 @@ public class PlayerController : MonoBehaviour
         if (animator != null)
         {
             animator.SetBool("IsRunning", false);
-            animator.SetTrigger("Die");
         }
 
         Collider2D collider = GetComponent<Collider2D>();

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -18,13 +19,13 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI timeText;
     [SerializeField] private GameObject deathScreen;
     [SerializeField] private GameObject mainMenu;
-
     [SerializeField] private GameObject inGameUI;
     [SerializeField] private GameObject powerUpButton;
     [SerializeField] private TextMeshProUGUI shieldCountText;
 
     private bool isGameRunning = false;
     private PlayerController player;
+    private bool isFindingUI = false;
 
     void Awake()
     {
@@ -44,23 +45,21 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        FindPlayer();
-        ShowMainMenu();
-
-        UpdateUI();
+        StartCoroutine(InitializeAfterDelay());
     }
 
-    void FindPlayer()
+    private IEnumerator InitializeAfterDelay()
     {
-        player = FindObjectOfType<PlayerController>();
-        if (player == null)
-        {
-            Debug.LogError("Player не найден на сцене!");
-        }
-        else
-        {
-            Debug.Log("Player найден!");
-        }
+        yield return new WaitForEndOfFrame();
+
+        FindPlayer();
+
+        ValidateUIReferences();
+
+        ShowMainMenu();
+        UpdateUI();
+
+        Debug.Log("GameManager инициализирован");
     }
 
     void Update()
@@ -87,7 +86,6 @@ public class GameManager : MonoBehaviour
 
             if (gameTime < 5f && Mathf.Floor(gameTime) != Mathf.Floor(oldTime))
             {
-
                 if (SpawnManager.Instance != null)
                 {
                     Debug.Log("SpawnManager Instance существует");
@@ -117,25 +115,29 @@ public class GameManager : MonoBehaviour
         isGameRunning = true;
         gameTime = 0f;
         score = 0;
+        lastUIUpdateTime = 0f;
+
+        ValidateUIReferences();
 
         if (mainMenu != null) mainMenu.SetActive(false);
         if (deathScreen != null && deathScreen.activeSelf) deathScreen.SetActive(false);
 
         if (inGameUI != null) inGameUI.SetActive(true);
+        else
+        {
+            Debug.LogWarning("inGameUI не найден, пытаемся найти...");
+            inGameUI = GameObject.Find("MainScreen");
+            if (inGameUI != null) inGameUI.SetActive(true);
+        }
 
         if (player != null)
         {
-            player.gameObject.SetActive(true);
             player.ResetPlayer();
         }
         else
         {
             FindPlayer();
-            if (player != null)
-            {
-                player.gameObject.SetActive(true);
-                player.ResetPlayer();
-            }
+            if (player != null) player.ResetPlayer();
         }
 
         Debug.Log("Запуск спавна файерболов...");
@@ -178,6 +180,8 @@ public class GameManager : MonoBehaviour
         Debug.Log("=== PLAYER DIED ===");
 
         isGameRunning = false;
+
+        ValidateUIReferences();
 
         if (SpawnManager.Instance != null)
         {
@@ -246,71 +250,84 @@ public class GameManager : MonoBehaviour
         {
             PowerUpManager.Instance.OnGameStateChanged(false);
         }
+
+        UpdateUI();
     }
 
     public void RestartGame()
     {
+        Debug.Log("=== RESTART GAME ===");
+
+        isGameRunning = false;
+        gameTime = 0f;
+        score = 0;
+        lastUIUpdateTime = 0f;
+
+        StopAllCoroutines();
+
+        GameObject[] fireballs = GameObject.FindGameObjectsWithTag("Fireball");
+        foreach (GameObject fb in fireballs)
+        {
+            if (fb != null) Destroy(fb);
+        }
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+        StartCoroutine(InitializeAfterRestart());
+    }
+
+    private IEnumerator InitializeAfterRestart()
+    {
+        yield return new WaitForEndOfFrame();
+
+        yield return new WaitForSeconds(0.1f);
+
+        FindPlayer();
+        ValidateUIReferences();
+
+        ShowMainMenu();
+
+        // Обновляем UI СРАЗУ
+        UpdateUI();
+
+        Debug.Log("Игра перезапущена, UI обновлен");
     }
 
     void UpdateUI()
     {
-        Debug.Log($"UpdateUI: Time={gameTime:F1}, Score={score}, isGameRunning={isGameRunning}");
-
-        if (scoreText == null)
+        if (scoreText == null || timeText == null || shieldCountText == null)
         {
-            Debug.LogError("scoreText ссылка NULL!");
-            return;
-        }
+            Debug.LogWarning("UI элементы не найдены, пытаемся найти...");
+            FindUIElements();
 
-        if (!scoreText.gameObject.activeSelf)
-        {
-            Debug.Log("Включаю ScoreText...");
-            scoreText.gameObject.SetActive(true);
+            if (scoreText == null || timeText == null)
+            {
+                Debug.LogError("Критические UI элементы не найдены, пропускаем обновление");
+                return;
+            }
         }
 
         if (!scoreText.gameObject.activeInHierarchy)
         {
-            Debug.LogWarning("ScoreText не активен в иерархии! Проверьте родительские объекты.");
-
-            Transform parent = scoreText.transform.parent;
-            while (parent != null)
-            {
-                if (!parent.gameObject.activeSelf)
-                {
-                    Debug.Log($"Включаю родителя: {parent.name}");
-                    parent.gameObject.SetActive(true);
-                }
-                parent = parent.parent;
-            }
-        }
-
-        if (timeText == null)
-        {
-            Debug.LogError("timeText ссылка NULL!");
-            return;
-        }
-
-        if (!timeText.gameObject.activeSelf)
-        {
-            Debug.Log("Включаю TimeText...");
-            timeText.gameObject.SetActive(true);
+            Debug.LogWarning("ScoreText не активен в иерархии, активируем...");
+            ActivateUIText(scoreText);
         }
 
         if (!timeText.gameObject.activeInHierarchy)
         {
-            Debug.LogWarning("TimeText не активен в иерархии!");
+            Debug.LogWarning("TimeText не активен в иерархии, активируем...");
+            ActivateUIText(timeText);
+        }
 
-            Transform parent = timeText.transform.parent;
-            while (parent != null)
-            {
-                if (!parent.gameObject.activeSelf)
-                {
-                    Debug.Log($"Включаю родителя: {parent.name}");
-                    parent.gameObject.SetActive(true);
-                }
-                parent = parent.parent;
-            }
+        if (isGameRunning)
+        {
+            scoreText.text = $"Score: {score}";
+            timeText.text = $"Time: {gameTime:F1}s";
+        }
+        else
+        {
+            scoreText.text = $"Score: {score}";
+            timeText.text = $"Time: {gameTime:F1}s";
         }
 
         if (shieldCountText != null)
@@ -318,25 +335,131 @@ public class GameManager : MonoBehaviour
             int shieldCount = PowerUpManager.Instance != null ?
                 PowerUpManager.Instance.GetShieldCount() : 0;
             shieldCountText.text = $"Shields: {shieldCount}";
+
             shieldCountText.gameObject.SetActive(shieldCount > 0);
         }
 
-        scoreText.text = $"Score: {score}";
-        timeText.text = $"Time: {gameTime:F1}s";
+        Debug.Log($"UI обновлен: Score={score}, Time={gameTime:F1}, GameRunning={isGameRunning}");
+    }
 
-        Debug.Log($"UI обновлен: Score={score}, Time={gameTime:F1}");
+    private void ActivateUIText(TextMeshProUGUI textComponent)
+    {
+        if (textComponent == null) return;
+
+        textComponent.gameObject.SetActive(true);
+
+        Transform parent = textComponent.transform.parent;
+        while (parent != null)
+        {
+            if (!parent.gameObject.activeSelf)
+            {
+                parent.gameObject.SetActive(true);
+            }
+            parent = parent.parent;
+        }
+    }
+
+    private void ValidateUIReferences()
+    {
+        if (isFindingUI) return;
+        isFindingUI = true;
+
+        if (scoreText == null || timeText == null)
+        {
+            Debug.Log("Критические UI элементы отсутствуют, запускаем поиск...");
+            FindUIElements();
+        }
+
+        if (deathScreen == null)
+        {
+            deathScreen = GameObject.Find("DeathScreen");
+            if (deathScreen != null) Debug.Log("Найден DeathScreen");
+        }
+
+        if (mainMenu == null)
+        {
+            mainMenu = GameObject.Find("MainMenu");
+            if (mainMenu != null) Debug.Log("Найден MainMenu");
+        }
+
+        if (inGameUI == null)
+        {
+            inGameUI = GameObject.Find("MainScreen");
+            if (inGameUI != null) Debug.Log("Найден MainScreen (inGameUI)");
+        }
+
+        isFindingUI = false;
+    }
+
+    private void FindUIElements()
+    {
+        Debug.Log("Поиск UI элементов в сцене...");
+
+        TextMeshProUGUI[] allTexts = Resources.FindObjectsOfTypeAll<TextMeshProUGUI>();
+
+        foreach (TextMeshProUGUI text in allTexts)
+        {
+            if (text == null) continue;
+
+            if (text.gameObject.name == "ScoreText" ||
+                text.gameObject.name.Contains("Score"))
+            {
+                scoreText = text;
+                Debug.Log($"Найден ScoreText: {text.gameObject.name}");
+            }
+            else if (text.gameObject.name == "TimeText" ||
+                     text.gameObject.name.Contains("Time"))
+            {
+                timeText = text;
+                Debug.Log($"Найден TimeText: {text.gameObject.name}");
+            }
+            else if (text.gameObject.name == "ShieldCountText" ||
+                     text.gameObject.name.Contains("Shield"))
+            {
+                shieldCountText = text;
+                Debug.Log($"Найден ShieldCountText: {text.gameObject.name}");
+            }
+        }
+
+        if (scoreText == null) Debug.LogError("ScoreText не найден!");
+        if (timeText == null) Debug.LogError("TimeText не найден!");
+        if (shieldCountText == null) Debug.Log("ShieldCountText не найден (не критично)");
     }
 
     void ShowMainMenu()
     {
+        ValidateUIReferences();
+
         if (mainMenu != null)
         {
             mainMenu.SetActive(true);
         }
+        else
+        {
+            Debug.LogWarning("MainMenu не найден при попытке показать");
+        }
 
-        if (deathScreen != null)
+        if (deathScreen != null && deathScreen.activeSelf)
         {
             deathScreen.SetActive(false);
+        }
+
+        if (inGameUI != null)
+        {
+            inGameUI.SetActive(false);
+        }
+    }
+
+    void FindPlayer()
+    {
+        player = FindObjectOfType<PlayerController>();
+        if (player == null)
+        {
+            Debug.LogWarning("Player не найден на сцене! Будет повторная попытка позже.");
+        }
+        else
+        {
+            Debug.Log("Player найден!");
         }
     }
 
@@ -384,5 +507,14 @@ public class GameManager : MonoBehaviour
         Debug.Log($"HighScore: {highScore}");
         Debug.Log($"ScoreText назначен: {scoreText != null}");
         Debug.Log($"TimeText назначен: {timeText != null}");
+        Debug.Log($"Player назначен: {player != null}");
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 }
