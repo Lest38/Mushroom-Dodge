@@ -1,0 +1,101 @@
+using UnityEngine;
+using System.Collections;
+
+public class SpawnManager : MonoBehaviour
+{
+    public static SpawnManager Instance { get; private set; }
+
+    [Header("Spawn Settings")]
+    [SerializeField] private GameObject fireballPrefab;
+    [SerializeField] private Transform spawnParent;
+    [SerializeField] private float initialSpawnRate = 1.3f;
+    [SerializeField] private float minSpawnRate = 0.3f;
+    [SerializeField] private float spawnXRange = 8f;
+
+    private bool isSpawning = false;
+    private float currentSpawnRate;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
+
+    public void StartSpawning()
+    {
+        if (isSpawning) return;
+
+        isSpawning = true;
+        currentSpawnRate = initialSpawnRate;
+        StartCoroutine(SpawnRoutine());
+        StartCoroutine(SpecialWaveRoutine());
+    }
+
+    public void StopSpawning()
+    {
+        isSpawning = false;
+        StopAllCoroutines();
+    }
+
+    IEnumerator SpawnRoutine()
+    {
+        while (isSpawning)
+        {
+            SpawnFireball();
+
+            // Используем множитель скорости спавна из DifficultyManager
+            if (DifficultyManager.Instance != null)
+            {
+                currentSpawnRate = Mathf.Max(
+                    minSpawnRate,
+                    initialSpawnRate * DifficultyManager.Instance.GetSpawnRateMultiplier()
+                );
+            }
+
+            yield return new WaitForSeconds(currentSpawnRate);
+        }
+    }
+
+    void SpawnFireball()
+    {
+        float spawnX = Random.Range(-spawnXRange, spawnXRange);
+        Vector3 spawnPos = new Vector3(spawnX, 7f, 0f);
+
+        // Создаем файербол
+        GameObject fireball = Instantiate(fireballPrefab, spawnPos, Quaternion.identity, spawnParent);
+
+        // У файербола уже есть скрипт Fireball.cs который сам установит скорость
+        // Ничего дополнительного делать не нужно!
+    }
+
+    IEnumerator SpecialWaveRoutine()
+    {
+        while (isSpawning)
+        {
+            yield return new WaitForSeconds(Random.Range(30f, 45f));
+
+            if (!isSpawning) break;
+
+            yield return StartCoroutine(SpawnWave());
+        }
+    }
+
+    IEnumerator SpawnWave()
+    {
+        Debug.Log(" ШКВАЛ НАЧАЛСЯ!");
+
+        float waveDuration = 8f;
+        float waveTimer = 0f;
+        float waveSpawnRate = 0.6f;
+
+        while (waveTimer < waveDuration)
+        {
+            SpawnFireball();
+
+            waveTimer += waveSpawnRate;
+            yield return new WaitForSeconds(waveSpawnRate);
+        }
+
+        Debug.Log(" ШКВАЛ ЗАКОНЧИЛСЯ!");
+    }
+}
