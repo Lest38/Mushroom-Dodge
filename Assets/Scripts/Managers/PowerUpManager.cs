@@ -14,83 +14,54 @@ public class PowerUpManager : MonoBehaviour
 
     [Header("Эффекты")]
     [SerializeField] private GameObject shieldEffect;
-    [SerializeField] private GameObject slowTimeEffect;
 
     [Header("Настройки")]
     [SerializeField] private float shieldDuration = 10f;
     [SerializeField] private Sprite shieldSprite;
 
-    private bool hasShieldItem = false;
     private int shieldCount = 0;
     private float powerUpTimer = 0f;
     private bool isPowerUpActive = false;
     private PlayerController playerController;
 
-    private void Awake()
+    private const string COUNT_FORMAT = ".{0}";
+    private const string BUTTON_FORMAT = "SHIELD ({0})";
+    private const string TIMER_ACTIVE_FORMAT = "SHIELD {0}s";
+
+    void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    private void Start()
+    void Start()
     {
         playerController = FindObjectOfType<PlayerController>();
-
-        InitializeUI();
-
-        Invoke(nameof(LoadEquippedPowerUp), 0.1f);
+        SetupButton();
+        RefreshPowerUp();
     }
 
-    void InitializeUI()
+    void SetupButton()
     {
-        if (usePowerUpButton == null)
-        {
-            return;
-        }
+        if (usePowerUpButton == null) return;
 
         usePowerUpButton.onClick.RemoveAllListeners();
         usePowerUpButton.onClick.AddListener(UsePowerUp);
-
         usePowerUpButton.gameObject.SetActive(false);
-        usePowerUpButton.interactable = false;
     }
 
-    public void Reinitialize()
+    public void RefreshPowerUp()
     {
-        playerController = FindObjectOfType<PlayerController>();
-
-        LoadEquippedPowerUp();
-
-        isPowerUpActive = false;
-        powerUpTimer = 0f;
-
-        UpdateUI();
-    }
-
-    void LoadEquippedPowerUp()
-    {
-        hasShieldItem = false;
         shieldCount = 0;
 
         if (ShopManager.Instance != null)
         {
-            ShopItem shieldItem = ShopManager.Instance.GetEquippedItem(ShopItem.ItemType.Shield);
-
-            if (shieldItem != null && shieldItem.isPurchased && shieldItem.isEquipped)
+            var shieldItem = ShopManager.Instance.GetEquippedItem(ShopItem.ItemType.Shield);
+            if (shieldItem?.isPurchased == true && shieldItem.isEquipped)
             {
-                hasShieldItem = true;
                 shieldCount = shieldItem.quantity;
-
                 if (powerUpIcon != null)
-                {
                     powerUpIcon.sprite = shieldItem.icon != null ? shieldItem.icon : shieldSprite;
-                }
             }
         }
 
@@ -99,155 +70,85 @@ public class PowerUpManager : MonoBehaviour
 
     void UpdateUI()
     {
-        if (powerUpIcon != null)
+        bool hasShield = shieldCount > 0;
+
+        powerUpIcon?.gameObject.SetActive(hasShield);
+
+        if (powerUpCountText != null)
         {
-            powerUpIcon.gameObject.SetActive(hasShieldItem && shieldCount > 0);
+            powerUpCountText.gameObject.SetActive(hasShield);
+            if (hasShield)
+                powerUpCountText.text = string.Format(COUNT_FORMAT, shieldCount);
         }
 
         if (usePowerUpButton != null)
         {
-            bool showButton = hasShieldItem && shieldCount > 0 && !isPowerUpActive;
+            bool showButton = hasShield && !isPowerUpActive && GameManager.Instance?.IsGameRunning == true;
             usePowerUpButton.gameObject.SetActive(showButton);
+            usePowerUpButton.interactable = showButton;
 
-            bool canUse = showButton &&
-                         GameManager.Instance != null &&
-                         GameManager.Instance.IsGameRunning;
-
-            usePowerUpButton.interactable = canUse;
-
-            TextMeshProUGUI buttonText = usePowerUpButton.GetComponentInChildren<TextMeshProUGUI>();
-            if (buttonText != null)
-            {
-                buttonText.text = $"USE SHIELD ({shieldCount})";
-            }
-        }
-
-        if (powerUpCountText != null)
-        {
-            powerUpCountText.gameObject.SetActive(hasShieldItem && shieldCount > 0);
-            if (hasShieldItem && shieldCount > 0)
-            {
-                powerUpCountText.text = $"x{shieldCount}";
-            }
+            var buttonText = usePowerUpButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (buttonText != null && showButton)
+                buttonText.text = string.Format(BUTTON_FORMAT, shieldCount);
         }
 
         if (powerUpTimerText != null)
         {
             powerUpTimerText.gameObject.SetActive(isPowerUpActive);
             if (isPowerUpActive)
-            {
-                powerUpTimerText.text = $"SHIELD: {(int)powerUpTimer}s";
-            }
+                powerUpTimerText.text = string.Format(TIMER_ACTIVE_FORMAT, (int)powerUpTimer);
         }
     }
 
     public void UsePowerUp()
     {
-        if (!hasShieldItem || shieldCount <= 0)
-        {
-            return;
-        }
-
-        if (isPowerUpActive)
-        {
-            return;
-        }
-
-        if (GameManager.Instance == null || !GameManager.Instance.IsGameRunning)
-        {
-            return;
-        }
-
-        if (ShopManager.Instance != null)
-        {
-            ShopManager.Instance.ConsumeShield();
-        }
-
-        shieldCount--;
+        if (shieldCount <= 0 || isPowerUpActive) return;
+        if (GameManager.Instance?.IsGameRunning != true) return;
 
         isPowerUpActive = true;
         powerUpTimer = shieldDuration;
 
         UpdateUI();
 
-        ActivateShieldEffect();
+        ActivateShield();
+
+        ShopManager.Instance?.ConsumeShield();
 
         CancelInvoke(nameof(EndPowerUp));
-        Invoke(nameof(EndPowerUp), powerUpTimer);
+        Invoke(nameof(EndPowerUp), shieldDuration);
     }
 
-    void ActivateShieldEffect()
+    void ActivateShield()
     {
-
-        if (shieldEffect != null)
-        {
-            shieldEffect.SetActive(true);
-        }
-
-        if (playerController != null)
-        {
-            playerController.EnableShield(powerUpTimer);
-        }
+        shieldEffect?.SetActive(true);
+        playerController?.EnableShield(shieldDuration);
     }
 
     void EndPowerUp()
     {
         isPowerUpActive = false;
         powerUpTimer = 0f;
+        shieldEffect?.SetActive(false);
 
-        if (shieldEffect != null)
-        {
-            shieldEffect.SetActive(false);
-        }
+        RefreshPowerUp();
 
         UpdateUI();
     }
 
-    public void OnShieldUsed()
-    {
-        EndPowerUp();
-    }
-
-    public void OnShieldTimeEnded()
-    {
-        EndPowerUp();
-    }
-
-    private void Update()
+    void Update()
     {
         if (isPowerUpActive && powerUpTimer > 0)
         {
             powerUpTimer -= Time.deltaTime;
 
-            if (powerUpTimerText != null && powerUpTimerText.gameObject.activeSelf)
-            {
-                powerUpTimerText.text = $"SHIELD: {(int)powerUpTimer}s";
-            }
+            if (powerUpTimerText != null)
+                powerUpTimerText.text = string.Format(TIMER_ACTIVE_FORMAT, (int)powerUpTimer);
 
-            if (powerUpTimer <= 0)
-            {
-                EndPowerUp();
-            }
+            if (powerUpTimer <= 0) EndPowerUp();
         }
     }
 
-    public void OnGameStateChanged(bool isGameRunning)
-    {
-        UpdateUI();
-    }
-
-    public void RefreshPowerUp()
-    {
-        LoadEquippedPowerUp();
-    }
-
-    public bool IsShieldActive()
-    {
-        return isPowerUpActive;
-    }
-
-    public int GetShieldCount()
-    {
-        return shieldCount;
-    }
+    public void OnGameStateChanged(bool isGameRunning) => UpdateUI();
+    public bool IsShieldActive() => isPowerUpActive;
+    public int GetShieldCount() => shieldCount;
 }

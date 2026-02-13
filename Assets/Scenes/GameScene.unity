@@ -1328,7 +1328,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0007922228}
+  m_AnchoredPosition: {x: 0, y: -0.000019382547}
   m_SizeDelta: {x: 0, y: 760.2102}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &589381896
@@ -2045,15 +2045,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a71d4b5755109f42bb0ef75aae48b7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  toggleButton: {fileID: 674509768}
   iconImage: {fileID: 0}
   statusText: {fileID: 699905380}
   musicOnSprite: {fileID: 0}
   musicOffSprite: {fileID: 0}
-  enabledColor: {r: 0, g: 0.7607844, b: 0.10196079, a: 1}
-  disabledColor: {r: 1, g: 0, b: 0, a: 1}
-  musicOnText: 'MUSIC: ON'
-  musicOffText: 'MUSIC: OFF'
 --- !u!114 &674509768
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2760,8 +2755,6 @@ MonoBehaviour:
   fireballWhoosh: {fileID: 0}
   shieldSound: {fileID: 0}
   buttonClickSound: {fileID: 8300000, guid: 319307b23c67e1742915ee0749ca6d91, type: 3}
-  musicVolume: 0.5
-  sfxVolume: 0.7
 --- !u!114 &922701872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2863,7 +2856,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameTime: 0
-  lastUIUpdateTime: 0
   score: 0
   highScore: 0
   spores: 0
@@ -2871,8 +2863,7 @@ MonoBehaviour:
   timeText: {fileID: 671877673}
   deathScreen: {fileID: 589422092}
   mainMenu: {fileID: 1140085557}
-  inGameUI: {fileID: 0}
-  powerUpButton: {fileID: 0}
+  inGameUI: {fileID: 1652643320}
   shieldCountText: {fileID: 141559841}
 --- !u!4 &922701874
 Transform:
@@ -3054,6 +3045,90 @@ MonoBehaviour:
   slowTimeEffect: {fileID: 0}
   shieldDuration: 10
   shieldSprite: {fileID: 0}
+--- !u!1 &981941222
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 981941224}
+  - component: {fileID: 981941223}
+  m_Layer: 0
+  m_Name: Shield
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!212 &981941223
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 981941222}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_Sprite: {fileID: 21300000, guid: 7ae47335dee14ae44b1b81a1a4db81ac, type: 3}
+  m_Color: {r: 0.7686275, g: 0.7686275, b: 0.7686275, a: 0.28235295}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 3.5, y: 3.5}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
+--- !u!4 &981941224
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 981941222}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0, y: 0, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2120890861}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1092599827
 GameObject:
   m_ObjectHideFlags: 0
@@ -5982,7 +6057,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1293907073}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999707
+  m_Size: 0.9933274
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -6343,7 +6418,7 @@ MonoBehaviour:
   deceleration: 10
   maxX: 8
   animator: {fileID: 0}
-  shieldVisual: {fileID: 0}
+  shieldVisual: {fileID: 981941222}
   fadeOutDuration: 0.5
 --- !u!4 &2120890861
 Transform:
@@ -6357,7 +6432,8 @@ Transform:
   m_LocalPosition: {x: 0, y: -3.5, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 981941224}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!210 &2120890862

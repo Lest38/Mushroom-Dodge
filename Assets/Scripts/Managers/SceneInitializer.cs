@@ -5,18 +5,14 @@ public class SceneInitializer : MonoBehaviour
 {
     void Start()
     {
-        Debug.Log($"SceneInitializer: сцена {SceneManager.GetActiveScene().name} загружена");
-
         Invoke(nameof(InitializeManagers), 0.1f);
     }
 
     void InitializeManagers()
     {
-        Debug.Log("Инициализация менеджеров...");
-
         if (PowerUpManager.Instance != null)
         {
-            PowerUpManager.Instance.Reinitialize();
+            PowerUpManager.Instance.RefreshPowerUp();
         }
 
         if (ShopManager.Instance != null)
@@ -28,7 +24,5 @@ public class SceneInitializer : MonoBehaviour
         {
             SpawnManager.Instance.StopSpawning();
         }
-
-        Debug.Log("Менеджеры инициализированы");
     }
 }

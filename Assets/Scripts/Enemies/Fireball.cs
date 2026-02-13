@@ -27,6 +27,9 @@ public class Fireball : MonoBehaviour
     public float mediumThreshold = 10f;
     public float fastThreshold = 14f;
 
+    [Header("Rendering")]
+    [SerializeField] private int sortingOrder = -5;
+
     private float currentSpeed;
     private bool hasCollided = false;
     private SpriteRenderer spriteRenderer;
@@ -34,6 +37,20 @@ public class Fireball : MonoBehaviour
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sortingOrder = sortingOrder;
+        }
+
+        if (transform.parent != null)
+        {
+            Canvas parentCanvas = GetComponentInParent<Canvas>();
+            if (parentCanvas != null)
+            {
+                transform.SetParent(null);
+            }
+        }
 
         float speedMultiplier = 1f;
 
@@ -48,8 +65,6 @@ public class Fireball : MonoBehaviour
 
         float baseSpeed = Random.Range(minSpeed, maxSpeed);
         currentSpeed = baseSpeed * speedMultiplier;
-
-        Debug.Log($"Fireball создан: база={baseSpeed:F1}, множитель=x{speedMultiplier:F2}, итог={currentSpeed:F1}");
 
         UpdateVisuals();
 
