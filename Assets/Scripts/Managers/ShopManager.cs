@@ -2,13 +2,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
 
 public class ShopManager : MonoBehaviour
 {
     public static ShopManager Instance;
 
     [Header("Настройки магазина")]
-    [SerializeField] private List<ShopItem> shopItems = new List<ShopItem>();
+    [SerializeField] private List<ShopItem> shopItems = new();
     [SerializeField] private GameObject shopItemPrefab;
     [SerializeField] private Transform shopItemsContainer;
 
@@ -28,71 +29,40 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private Button buyButton;
     [SerializeField] private Button useButton;
 
-    private void Awake()
+    void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    private void Start()
+    void Start()
     {
         LoadShopData();
-
-        InitializeUI();
-
+        SetupButtons();
+        CreateShopItems();
+        shopPanel.SetActive(false);
         UpdateSporesDisplay();
 
-        shopPanel.SetActive(false);
+        if (shopItems.Count > 0) SelectItem(shopItems[0]);
     }
 
-    void InitializeUI()
+    void SetupButtons()
     {
-        if (openShopButton != null)
-        {
-            openShopButton.onClick.AddListener(OpenShop);
-        }
-
-        if (closeShopButton != null)
-        {
-            closeShopButton.onClick.AddListener(CloseShop);
-        }
-
-        CreateShopItems();
-
-        if (shopItems.Count > 0)
-        {
-            SelectItem(shopItems[0]);
-        }
+        openShopButton?.onClick.AddListener(OpenShop);
+        closeShopButton?.onClick.AddListener(CloseShop);
+        buyButton?.onClick.AddListener(BuySelectedItem);
+        useButton?.onClick.AddListener(EquipSelectedItem);
     }
 
     void CreateShopItems()
     {
-        foreach (Transform child in shopItemsContainer)
+        foreach (Transform child in shopItemsContainer) Destroy(child.gameObject);
+
+        foreach (var item in shopItems)
         {
-            Destroy(child.gameObject);
-        }
-
-        foreach (ShopItem item in shopItems)
-        {
-            GameObject itemUI = Instantiate(shopItemPrefab, shopItemsContainer);
-
-            ShopItemUI itemUIComponent = itemUI.GetComponent<ShopItemUI>();
-            if (itemUIComponent != null)
-            {
-                itemUIComponent.Initialize(item, this);
-            }
-
-            Button itemButton = itemUI.GetComponent<Button>();
-            if (itemButton != null)
-            {
-                itemButton.onClick.AddListener(() => SelectItem(item));
-            }
+            var itemUI = Instantiate(shopItemPrefab, shopItemsContainer);
+            itemUI.GetComponent<ShopItemUI>()?.Initialize(item);
+            itemUI.GetComponent<Button>()?.onClick.AddListener(() => SelectItem(item));
         }
     }
 
@@ -103,19 +73,12 @@ public class ShopManager : MonoBehaviour
         if (selectedItemName != null) selectedItemName.text = item.itemName;
         if (selectedItemDescription != null) selectedItemDescription.text = item.description;
         if (selectedItemCost != null) selectedItemCost.text = $"Cost: {item.cost} spores";
-        if (selectedItemIcon != null) selectedItemIcon.sprite = item.icon;
 
         if (selectedItemQuantity != null)
         {
-            if (item.isConsumable && item.isPurchased)
-            {
-                selectedItemQuantity.text = $"Quantity: {item.quantity}";
-                selectedItemQuantity.gameObject.SetActive(true);
-            }
-            else
-            {
-                selectedItemQuantity.gameObject.SetActive(false);
-            }
+            bool showQuantity = item.isConsumable && item.isPurchased;
+            selectedItemQuantity.gameObject.SetActive(showQuantity);
+            if (showQuantity) selectedItemQuantity.text = $"Quantity: {item.quantity}";
         }
 
         UpdateButtons();
@@ -127,38 +90,37 @@ public class ShopManager : MonoBehaviour
 
         if (buyButton != null)
         {
-            bool canBuy = false;
+            bool isConsumable = selectedItem.isConsumable;
+            bool hasEnoughSpores = GameManager.Instance.spores >= selectedItem.cost;
 
-            if (selectedItem.isConsumable)
-            {
-                canBuy = GameManager.Instance.spores >= selectedItem.cost;
-                buyButton.GetComponentInChildren<TextMeshProUGUI>().text = "BUY";
-            }
-            else
-            {
-                canBuy = !selectedItem.isPurchased &&
-                        GameManager.Instance.spores >= selectedItem.cost;
-                buyButton.GetComponentInChildren<TextMeshProUGUI>().text =
-                    selectedItem.isPurchased ? "PURCHASED" : "BUY";
-            }
+            bool canBuy = isConsumable
+                ? hasEnoughSpores
+                : !selectedItem.isPurchased && hasEnoughSpores;
 
             buyButton.interactable = canBuy;
+            var btnText = buyButton.GetComponentInChildren<TextMeshProUGUI>();
+
+            if (!isConsumable && selectedItem.isPurchased)
+                btnText.text = "PURCHASED";
+            else
+                btnText.text = "BUY";
         }
 
         if (useButton != null)
         {
+            var btnText = useButton.GetComponentInChildren<TextMeshProUGUI>();
+
             if (selectedItem.isConsumable)
             {
-                useButton.interactable = selectedItem.isPurchased &&
-                                       selectedItem.quantity > 0;
-                useButton.GetComponentInChildren<TextMeshProUGUI>().text =
-                    selectedItem.quantity > 0 ? "EQUIP" : "OUT OF STOCK";
+                bool hasItem = selectedItem.isPurchased && selectedItem.quantity > 0;
+                useButton.interactable = hasItem;
+                btnText.text = hasItem ? "EQUIP" : "OUT OF STOCK";
             }
             else
             {
-                useButton.interactable = selectedItem.isPurchased && !selectedItem.isEquipped;
-                useButton.GetComponentInChildren<TextMeshProUGUI>().text =
-                    selectedItem.isEquipped ? "EQUIPPED" : "EQUIP";
+                bool canEquip = selectedItem.isPurchased && !selectedItem.isEquipped;
+                useButton.interactable = canEquip;
+                btnText.text = selectedItem.isEquipped ? "EQUIPPED" : "EQUIP";
             }
         }
     }
@@ -166,153 +128,92 @@ public class ShopManager : MonoBehaviour
     public void BuySelectedItem()
     {
         if (selectedItem == null) return;
+        if (GameManager.Instance.spores < selectedItem.cost) return;
 
-        if (GameManager.Instance.spores >= selectedItem.cost)
+        GameManager.Instance.spores -= selectedItem.cost;
+
+        if (selectedItem.isConsumable)
         {
-            GameManager.Instance.spores -= selectedItem.cost;
-
-            if (selectedItem.isConsumable)
-            {
-                if (!selectedItem.isPurchased)
-                {
-                    selectedItem.isPurchased = true;
-                    selectedItem.quantity = 1;
-                }
-                else
-                {
-                    selectedItem.quantity++;
-                }
-            }
-            else
-            {
-                selectedItem.isPurchased = true;
-            }
-
-            SaveShopData();
-
-            UpdateSporesDisplay();
-            UpdateButtons();
-
-            if (selectedItemQuantity != null && selectedItem.isConsumable)
-            {
-                selectedItemQuantity.text = $"Quantity: {selectedItem.quantity}";
-            }
-
-            Debug.Log($"Куплен предмет: {selectedItem.itemName}, количество: {selectedItem.quantity}");
-
-            if (selectedItem.itemType == ShopItem.ItemType.Shield && selectedItem.quantity == 1)
-            {
-                EquipSelectedItem();
-            }
+            selectedItem.isPurchased = true;
+            selectedItem.quantity++;
         }
         else
         {
-            Debug.Log("Недостаточно спор!");
+            selectedItem.isPurchased = true;
         }
+
+        SaveShopData();
+        UpdateSporesDisplay();
+        UpdateButtons();
+
+        if (selectedItem.itemType == ShopItem.ItemType.Shield && selectedItem.quantity == 1)
+            EquipSelectedItem();
     }
 
     public void EquipSelectedItem()
     {
         if (selectedItem == null || !selectedItem.isPurchased) return;
+        if (selectedItem.isConsumable && selectedItem.quantity <= 0) return;
 
-        if (selectedItem.isConsumable && selectedItem.quantity <= 0)
-        {
-            Debug.LogWarning($"Нет {selectedItem.itemName} для экипировки!");
-            return;
-        }
-
-        foreach (ShopItem item in shopItems)
-        {
-            if (item.itemType == selectedItem.itemType)
-            {
-                item.isEquipped = false;
-            }
-        }
+        foreach (var item in shopItems.Where(i => i.itemType == selectedItem.itemType))
+            item.isEquipped = false;
 
         selectedItem.isEquipped = true;
-
         SaveShopData();
 
         UpdateButtons();
-
         CreateShopItems();
-
-        if (PowerUpManager.Instance != null)
-        {
-            PowerUpManager.Instance.RefreshPowerUp();
-        }
-
-        Debug.Log($"Экипирован предмет: {selectedItem.itemName}, осталось: {selectedItem.quantity}");
+        PowerUpManager.Instance?.RefreshPowerUp();
     }
 
     public void ConsumeShield()
     {
-        ShopItem shieldItem = GetEquippedItem(ShopItem.ItemType.Shield);
+        var shieldItem = GetEquippedItem(ShopItem.ItemType.Shield);
+        if (shieldItem?.isConsumable != true || shieldItem.quantity <= 0) return;
 
-        if (shieldItem != null && shieldItem.isConsumable && shieldItem.quantity > 0)
+        shieldItem.quantity--;
+
+        if (shieldItem.quantity <= 0)
         {
-            shieldItem.quantity--;
-
-            if (shieldItem.quantity <= 0)
-            {
-                shieldItem.isEquipped = false;
-                Debug.Log("Щиты закончились!");
-            }
-
-            SaveShopData();
-
-            if (selectedItem == shieldItem)
-            {
-                UpdateButtons();
-                if (selectedItemQuantity != null)
-                {
-                    selectedItemQuantity.text = $"Quantity: {shieldItem.quantity}";
-                }
-            }
-
-            if (PowerUpManager.Instance != null)
-            {
-                PowerUpManager.Instance.RefreshPowerUp();
-            }
-
-            Debug.Log($"Использован щит. Осталось: {shieldItem.quantity}");
+            shieldItem.isEquipped = false;
         }
+
+        SaveShopData();
+
+        if (selectedItem == shieldItem)
+        {
+            UpdateButtons();
+            if (selectedItemQuantity != null)
+                selectedItemQuantity.text = $"Quantity: {shieldItem.quantity}";
+        }
+
+        PowerUpManager.Instance?.RefreshPowerUp();
     }
 
-    public int GetShieldCount()
-    {
-        ShopItem shieldItem = GetEquippedItem(ShopItem.ItemType.Shield);
-        return (shieldItem != null && shieldItem.isPurchased) ? shieldItem.quantity : 0;
-    }
+    public int GetShieldCount() => GetEquippedItem(ShopItem.ItemType.Shield)?.quantity ?? 0;
 
     public void OpenShop()
     {
         shopPanel.SetActive(true);
         UpdateSporesDisplay();
-        Debug.Log("Магазин открыт");
     }
 
-    public void CloseShop()
-    {
-        shopPanel.SetActive(false);
-        Debug.Log("Магазин закрыт");
-    }
+    public void CloseShop() => shopPanel.SetActive(false);
 
     void UpdateSporesDisplay()
     {
         if (sporesCountText != null)
-        {
             sporesCountText.text = $"Spores: {GameManager.Instance.spores}";
-        }
     }
 
     void SaveShopData()
     {
         for (int i = 0; i < shopItems.Count; i++)
         {
-            PlayerPrefs.SetInt($"ShopItem_{i}_Purchased", shopItems[i].isPurchased ? 1 : 0);
-            PlayerPrefs.SetInt($"ShopItem_{i}_Equipped", shopItems[i].isEquipped ? 1 : 0);
-            PlayerPrefs.SetInt($"ShopItem_{i}_Quantity", shopItems[i].quantity);
+            var item = shopItems[i];
+            PlayerPrefs.SetInt($"ShopItem_{i}_Purchased", item.isPurchased ? 1 : 0);
+            PlayerPrefs.SetInt($"ShopItem_{i}_Equipped", item.isEquipped ? 1 : 0);
+            PlayerPrefs.SetInt($"ShopItem_{i}_Quantity", item.quantity);
         }
         PlayerPrefs.Save();
     }
@@ -321,38 +222,20 @@ public class ShopManager : MonoBehaviour
     {
         for (int i = 0; i < shopItems.Count; i++)
         {
-            shopItems[i].isPurchased = PlayerPrefs.GetInt($"ShopItem_{i}_Purchased", 0) == 1;
-            shopItems[i].isEquipped = PlayerPrefs.GetInt($"ShopItem_{i}_Equipped", 0) == 1;
-            shopItems[i].quantity = PlayerPrefs.GetInt($"ShopItem_{i}_Quantity",
-                shopItems[i].isConsumable ? 0 : 1);
+            var item = shopItems[i];
+            item.isPurchased = PlayerPrefs.GetInt($"ShopItem_{i}_Purchased", 0) == 1;
+            item.isEquipped = PlayerPrefs.GetInt($"ShopItem_{i}_Equipped", 0) == 1;
+            item.quantity = PlayerPrefs.GetInt($"ShopItem_{i}_Quantity", item.isConsumable ? 0 : 1);
         }
     }
 
-    public ShopItem GetEquippedItem(ShopItem.ItemType type)
-    {
-        foreach (ShopItem item in shopItems)
-        {
-            if (item.itemType == type && item.isEquipped && item.isPurchased)
-            {
-                return item;
-            }
-        }
-        return null;
-    }
-
+    public ShopItem GetEquippedItem(ShopItem.ItemType type) =>
+        shopItems.FirstOrDefault(i => i.itemType == type && i.isEquipped && i.isPurchased);
 
     public void Reinitialize()
     {
-        Debug.Log("ShopManager реинициализация");
-
         LoadShopData();
-
         UpdateSporesDisplay();
-
-        if (shopPanel != null)
-        {
-            shopPanel.SetActive(false);
-        }
+        shopPanel?.SetActive(false);
     }
-
 }

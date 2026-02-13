@@ -40,13 +40,7 @@ public class PowerUpManager : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("=== PowerUpManager Start ===");
-
         playerController = FindObjectOfType<PlayerController>();
-        if (playerController == null)
-        {
-            Debug.LogError("PlayerController не найден!");
-        }
 
         InitializeUI();
 
@@ -55,11 +49,8 @@ public class PowerUpManager : MonoBehaviour
 
     void InitializeUI()
     {
-        Debug.Log("Инициализация UI PowerUp");
-
         if (usePowerUpButton == null)
         {
-            Debug.LogError("UsePowerUpButton не назначена!");
             return;
         }
 
@@ -72,8 +63,6 @@ public class PowerUpManager : MonoBehaviour
 
     public void Reinitialize()
     {
-        Debug.Log("PowerUpManager реинициализация");
-
         playerController = FindObjectOfType<PlayerController>();
 
         LoadEquippedPowerUp();
@@ -86,8 +75,6 @@ public class PowerUpManager : MonoBehaviour
 
     void LoadEquippedPowerUp()
     {
-        Debug.Log("=== Загрузка экипированного бонуса ===");
-
         hasShieldItem = false;
         shieldCount = 0;
 
@@ -100,21 +87,11 @@ public class PowerUpManager : MonoBehaviour
                 hasShieldItem = true;
                 shieldCount = shieldItem.quantity;
 
-                Debug.Log($"Бонус загружен из магазина: {shieldItem.itemName}, количество: {shieldCount}");
-
                 if (powerUpIcon != null)
                 {
                     powerUpIcon.sprite = shieldItem.icon != null ? shieldItem.icon : shieldSprite;
                 }
             }
-            else
-            {
-                Debug.Log("В магазине нет экипированного щита или щиты закончились");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("ShopManager не найден");
         }
 
         UpdateUI();
@@ -122,8 +99,6 @@ public class PowerUpManager : MonoBehaviour
 
     void UpdateUI()
     {
-        Debug.Log($"Обновление UI PowerUp: есть щит={hasShieldItem}, количество={shieldCount}, активен={isPowerUpActive}");
-
         if (powerUpIcon != null)
         {
             powerUpIcon.gameObject.SetActive(hasShieldItem && shieldCount > 0);
@@ -168,27 +143,20 @@ public class PowerUpManager : MonoBehaviour
 
     public void UsePowerUp()
     {
-        Debug.Log("=== НАЖАТА КНОПКА POWER UP ===");
-
         if (!hasShieldItem || shieldCount <= 0)
         {
-            Debug.LogWarning("Нет щитов для использования!");
             return;
         }
 
         if (isPowerUpActive)
         {
-            Debug.LogWarning("Щит уже активен!");
             return;
         }
 
         if (GameManager.Instance == null || !GameManager.Instance.IsGameRunning)
         {
-            Debug.LogWarning("Игра не запущена!");
             return;
         }
-
-        Debug.Log($"Активация щита. Осталось щитов: {shieldCount}");
 
         if (ShopManager.Instance != null)
         {
@@ -210,25 +178,20 @@ public class PowerUpManager : MonoBehaviour
 
     void ActivateShieldEffect()
     {
-        Debug.Log($"Активация эффекта щита на {powerUpTimer} секунд");
 
         if (shieldEffect != null)
         {
             shieldEffect.SetActive(true);
-            Debug.Log("Визуальный эффект щита включен");
         }
 
         if (playerController != null)
         {
             playerController.EnableShield(powerUpTimer);
-            Debug.Log("Щит передан игроку");
         }
     }
 
     void EndPowerUp()
     {
-        Debug.Log("=== Завершение бонуса ===");
-
         isPowerUpActive = false;
         powerUpTimer = 0f;
 
@@ -238,19 +201,15 @@ public class PowerUpManager : MonoBehaviour
         }
 
         UpdateUI();
-
-        Debug.Log("Бонус завершен");
     }
 
     public void OnShieldUsed()
     {
-        Debug.Log("Щит использован для защиты от файербола");
         EndPowerUp();
     }
 
     public void OnShieldTimeEnded()
     {
-        Debug.Log("Время щита истекло");
         EndPowerUp();
     }
 
@@ -274,13 +233,11 @@ public class PowerUpManager : MonoBehaviour
 
     public void OnGameStateChanged(bool isGameRunning)
     {
-        Debug.Log($"PowerUpManager: состояние игры изменилось на {isGameRunning}");
         UpdateUI();
     }
 
     public void RefreshPowerUp()
     {
-        Debug.Log("Обновление бонуса из магазина");
         LoadEquippedPowerUp();
     }
 

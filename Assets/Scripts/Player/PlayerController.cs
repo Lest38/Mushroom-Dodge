@@ -14,63 +14,29 @@ public class PlayerController : MonoBehaviour
 
     [Header("Shield Settings")]
     [SerializeField] private GameObject shieldVisual;
-    private bool hasShield = false;
 
     [Header("Death Effect")]
     [SerializeField] private float fadeOutDuration = 0.5f;
 
-    private float currentSpeed = 0f;
-    private bool isDead = false;
+    private float currentSpeed;
+    private bool isDead;
+    private bool hasShield;
     private SpriteRenderer spriteRenderer;
-    private bool isInitialized = false;
+    private Collider2D playerCollider;
 
     void Start()
     {
-        InitializePlayer();
-    }
-
-    void InitializePlayer()
-    {
-        if (isInitialized) return;
-
         spriteRenderer = GetComponent<SpriteRenderer>();
+        playerCollider = GetComponent<Collider2D>();
 
         if (animator == null)
-        {
             animator = GetComponent<Animator>();
-            if (animator == null)
-            {
-                Debug.LogWarning("Animator не найден на Player!");
-            }
-        }
 
-        if (animator != null)
-        {
-            animator.Rebind();
-            animator.Update(0f);
-
-            animator.SetBool("IsRunning", false);
-            animator.ResetTrigger("Die");
-
-            animator.Play("Idle", 0, 0f);
-        }
-
-        if (shieldVisual != null)
-        {
-            shieldVisual.SetActive(false);
-        }
-
-        isInitialized = true;
-        Debug.Log("Player инициализирован");
+        ResetAnimationState();
+        shieldVisual?.SetActive(false);
     }
 
-    void OnEnable()
-    {
-        if (isInitialized)
-        {
-            ResetAnimationState();
-        }
-    }
+    void OnEnable() => ResetAnimationState();
 
     void Update()
     {
@@ -78,10 +44,7 @@ public class PlayerController : MonoBehaviour
 
         if (GameManager.Instance == null || !GameManager.Instance.IsGameRunning)
         {
-            if (animator != null)
-            {
-                animator.SetBool("IsRunning", false);
-            }
+            animator?.SetBool("IsRunning", false);
             return;
         }
 
@@ -95,29 +58,13 @@ public class PlayerController : MonoBehaviour
         if (Mathf.Abs(input) > 0.1f)
         {
             currentSpeed = Mathf.MoveTowards(currentSpeed, input * moveSpeed, acceleration * Time.deltaTime);
-
-            if (animator != null)
-            {
-                animator.SetBool("IsRunning", true);
-            }
-
-            if (input > 0)
-            {
-                transform.localScale = new Vector3(1, 1, 1);
-            }
-            else if (input < 0)
-            {
-                transform.localScale = new Vector3(-1, 1, 1);
-            }
+            animator?.SetBool("IsRunning", true);
+            transform.localScale = new Vector3(input > 0 ? 1 : -1, 1, 1);
         }
         else
         {
             currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.deltaTime);
-
-            if (animator != null)
-            {
-                animator.SetBool("IsRunning", false);
-            }
+            animator?.SetBool("IsRunning", false);
         }
 
         Vector3 newPos = transform.position + Vector3.right * currentSpeed * Time.deltaTime;
@@ -127,31 +74,30 @@ public class PlayerController : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Fireball") && !isDead)
-        {
-            if (hasShield)
-            {
-                UseShield();
-                Destroy(other.gameObject);
-                return;
-            }
+        if (!other.CompareTag("Fireball") || isDead) return;
 
-            Die();
+        if (hasShield)
+        {
+            UseShield();
+            Destroy(other.gameObject);
+            return;
         }
+
+        Die();
     }
 
-    private IEnumerator FadeOutAndDisable()
+    IEnumerator FadeOutAndDisable()
     {
         if (spriteRenderer == null) yield break;
 
-        Color originalColor = spriteRenderer.color;
-        float elapsedTime = 0f;
+        Color startColor = spriteRenderer.color;
+        float elapsed = 0f;
 
-        while (elapsedTime < fadeOutDuration)
+        while (elapsed < fadeOutDuration)
         {
-            elapsedTime += Time.deltaTime;
-            float alpha = Mathf.Lerp(1f, 0f, elapsedTime / fadeOutDuration);
-            spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+            elapsed += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsed / fadeOutDuration);
+            spriteRenderer.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
             yield return null;
         }
 
@@ -163,119 +109,65 @@ public class PlayerController : MonoBehaviour
         if (isDead) return;
 
         isDead = true;
-
         currentSpeed = 0f;
+        animator?.SetBool("IsRunning", false);
 
-        if (animator != null)
-        {
-            animator.SetBool("IsRunning", false);
-            animator.SetTrigger("Die");
-        }
-
-        Collider2D collider = GetComponent<Collider2D>();
-        if (collider != null) collider.enabled = false;
+        if (playerCollider != null)
+            playerCollider.enabled = false;
 
         StartCoroutine(FadeOutAndDisable());
-
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.PlayerDied();
-        }
+        GameManager.Instance?.PlayerDied();
     }
 
     public void EnableShield(float duration)
     {
         hasShield = true;
-
-        if (shieldVisual != null)
-        {
-            shieldVisual.SetActive(true);
-        }
-
-        Debug.Log("ўит активирован!");
-
-        Invoke("DisableShield", duration);
+        shieldVisual?.SetActive(true);
+        Invoke(nameof(DisableShield), duration);
     }
 
     void UseShield()
     {
         hasShield = false;
-
-        if (shieldVisual != null)
-        {
-            shieldVisual.SetActive(false);
-        }
-
-        Debug.Log("ўит использован дл€ защиты!");
+        shieldVisual?.SetActive(false);
     }
 
     void DisableShield()
     {
         hasShield = false;
-
-        if (shieldVisual != null)
-        {
-            shieldVisual.SetActive(false);
-        }
-
-        Debug.Log("ўит закончилс€");
+        shieldVisual?.SetActive(false);
     }
 
-    private void ResetAnimationState()
+    void ResetAnimationState()
     {
         if (animator == null) return;
 
         animator.Rebind();
         animator.Update(0f);
-
         animator.SetBool("IsRunning", false);
-        animator.ResetTrigger("Die");
-
         animator.Play("Idle", 0, 0f);
-
-        Debug.Log("јнимаци€ сброшена");
     }
 
     public void ResetPlayer()
     {
         isDead = false;
+        hasShield = false;
+        currentSpeed = 0f;
 
-        if (!gameObject.activeSelf)
-        {
-            gameObject.SetActive(true);
-        }
-
-        if (!isInitialized)
-        {
-            InitializePlayer();
-        }
+        gameObject.SetActive(true);
 
         ResetAnimationState();
 
         if (spriteRenderer != null)
-        {
             spriteRenderer.color = Color.white;
-        }
 
-        Collider2D collider = GetComponent<Collider2D>();
-        if (collider != null)
-        {
-            collider.enabled = true;
-        }
+        if (playerCollider != null)
+            playerCollider.enabled = true;
 
         transform.position = new Vector3(0, -3.5f, 0);
-        transform.localScale = new Vector3(1, 1, 1);
+        transform.localScale = Vector3.one;
 
-        currentSpeed = 0f;
-
-        CancelInvoke("DisableShield");
-
-        hasShield = false;
-        if (shieldVisual != null)
-        {
-            shieldVisual.SetActive(false);
-        }
-
-        Debug.Log("»грок полностью сброшен!");
+        shieldVisual?.SetActive(false);
+        CancelInvoke(nameof(DisableShield));
     }
 }

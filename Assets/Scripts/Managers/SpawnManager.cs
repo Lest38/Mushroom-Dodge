@@ -67,7 +67,7 @@ public class SpawnManager : MonoBehaviour
     {
         while (isSpawning)
         {
-            yield return new WaitForSeconds(Random.Range(30f, 45f));
+            yield return new WaitForSeconds(Random.Range(15f, 30f));
 
             if (!isSpawning) break;
 
@@ -77,8 +77,6 @@ public class SpawnManager : MonoBehaviour
 
     IEnumerator SpawnWave()
     {
-        Debug.Log(" ØÊÂÀË ÍÀ×ÀËÑß!");
-
         float waveDuration = 8f;
         float waveTimer = 0f;
         float waveSpawnRate = 0.6f;
@@ -90,7 +88,5 @@ public class SpawnManager : MonoBehaviour
             waveTimer += waveSpawnRate;
             yield return new WaitForSeconds(waveSpawnRate);
         }
-
-        Debug.Log(" ØÊÂÀË ÇÀÊÎÍ×ÈËÑß!");
     }
 }

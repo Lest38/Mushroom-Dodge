@@ -5,7 +5,6 @@ using TMPro;
 public class MusicToggleButton : MonoBehaviour
 {
     [Header("UI Elements")]
-    [SerializeField] private Button toggleButton;
     [SerializeField] private Image iconImage;
     [SerializeField] private TextMeshProUGUI statusText;
 
@@ -13,89 +12,50 @@ public class MusicToggleButton : MonoBehaviour
     [SerializeField] private Sprite musicOnSprite;
     [SerializeField] private Sprite musicOffSprite;
 
-    [Header("Colors")]
-    [SerializeField] private Color enabledColor = Color.green;
-    [SerializeField] private Color disabledColor = Color.red;
-
-    [Header("Texts")]
-    [SerializeField] private string musicOnText = "MUSIC: ON";
-    [SerializeField] private string musicOffText = "MUSIC: OFF";
-
     void Start()
     {
-        if (toggleButton == null)
+        Button btn = GetComponent<Button>();
+        if (btn != null)
         {
-            toggleButton = GetComponent<Button>();
-            if (toggleButton == null)
-            {
-                toggleButton = GetComponentInChildren<Button>();
-            }
-        }
-
-        if (toggleButton != null)
-        {
-            toggleButton.onClick.RemoveAllListeners();
-            toggleButton.onClick.AddListener(OnToggleButtonClick);
-            toggleButton.onClick.AddListener(() => {
-                if (AudioManager.Instance != null)
-                    AudioManager.Instance.PlaySFX("ButtonClick");
-            });
-        }
-        else
-        {
-            Debug.LogError(" нопка не найдена на MusicToggleButton!");
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(OnButtonClick);
         }
 
         UpdateVisuals();
     }
 
-    void OnToggleButtonClick()
+    void OnButtonClick()
     {
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.ToggleMusic();
+            AudioManager.Instance.PlaySFX("ButtonClick");
+
             UpdateVisuals();
-        }
-        else
-        {
-            Debug.LogError("AudioManager не найден!");
         }
     }
 
-    void UpdateVisuals()
+    void OnEnable()
+    {
+        UpdateVisuals();
+    }
+
+    public void UpdateVisuals()
     {
         if (AudioManager.Instance == null) return;
 
-        bool isMusicEnabled = AudioManager.Instance.IsMusicEnabled();
+        bool isOn = AudioManager.Instance.IsMusicEnabled();
 
         if (iconImage != null)
         {
-            iconImage.sprite = isMusicEnabled ? musicOnSprite : musicOffSprite;
-            iconImage.color = isMusicEnabled ? enabledColor : disabledColor;
+            iconImage.sprite = isOn ? musicOnSprite : musicOffSprite;
+            iconImage.color = isOn ? Color.green : Color.red;
         }
 
         if (statusText != null)
         {
-            statusText.text = isMusicEnabled ? musicOnText : musicOffText;
-            statusText.color = isMusicEnabled ? enabledColor : disabledColor;
-        }
-
-        if (toggleButton != null)
-        {
-            ColorBlock colors = toggleButton.colors;
-            colors.normalColor = isMusicEnabled ? enabledColor : disabledColor;
-            colors.highlightedColor = isMusicEnabled ?
-                Color.Lerp(enabledColor, Color.white, 0.3f) :
-                Color.Lerp(disabledColor, Color.white, 0.3f);
-            toggleButton.colors = colors;
-        }
-    }
-
-    void Update()
-    {
-        if (Time.frameCount % 30 == 0)
-        {
-            UpdateVisuals();
+            statusText.text = isOn ? "MUSIC: ON" : "MUSIC: OFF";
+            statusText.color = isOn ? Color.green : Color.red;
         }
     }
 }
