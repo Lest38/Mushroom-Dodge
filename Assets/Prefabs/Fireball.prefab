@@ -82,7 +82,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 3.59, y: 7.32}
+  m_Size: {x: 1.5608696, y: 3.1826086}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -164,7 +164,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minSpeed: 3
   maxSpeed: 8
-  rotationSpeed: 100
+  rotationSpeed: 0
   trailParticles: {fileID: 0}
   explosionParticles: {fileID: 0}
   useProgressiveSpeed: 1

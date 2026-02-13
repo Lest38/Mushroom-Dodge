@@ -223,11 +223,6 @@ public class PowerUpManager : MonoBehaviour
             playerController.EnableShield(powerUpTimer);
             Debug.Log("ўит передан игроку");
         }
-
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlaySFX("Shield");
-        }
     }
 
     void EndPowerUp()
